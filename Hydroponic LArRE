@@ -1,0 +1,93 @@
+# Can be changed
+alias LArRE d0
+define NbrOfPot 13
+define CollectSeed 1
+#Not fully working
+define UseFert 0
+# Do not Touch!!!!!
+alias moving r15
+alias GoBack r14
+alias CurentPot r13
+alias PlantState r12
+alias PotState r11
+alias PotQuantity r10
+
+define FertDepot 0
+define SeedDepot 1
+define Depot 2
+define Home 3
+define PlantSlot 255
+define SeedClass 4
+move r3 -1
+reset:
+s LArRE Setting Home
+brnez r3 2
+sleep 600
+move r3 0
+move CurentPot 3
+next:
+add CurentPot CurentPot 1
+bgt CurentPot NbrOfPot reset
+start:
+s LArRE Setting CurentPot
+jal wait
+ls PotState LArRE PlantSlot Occupied
+beqz PotState NeedFert
+j WaitSeed
+NeedFert:
+beqz UseFert PlantSeed
+j Fertilise
+WaitSeed:
+beqz CollectSeed Maturing
+j SeedReady
+Maturing:
+ls PlantState LArRE PlantSlot Mature
+sleep 1
+bnez PlantState HarvestAll
+j next
+SeedReady:
+ls PlantState LArRE PlantSlot Seeding
+sleep 1
+beq PlantState -1 next
+j HarvestAll
+HarvestAll:
+ls PotQuantity LArRE PlantSlot Quantity
+sleep 1
+beqz PotQuantity DropContent
+jal UseLArRE
+j HarvestAll
+DropContent:
+s LArRE Setting Depot
+ls r1 LArRE 0 Occupied
+sleep 1
+beqz r1 start
+jal wait
+jal UseLArRE
+j DropContent
+Fertilise:
+s LArRE Setting FertDepot
+jal wait
+jal UseLArRE
+s LArRE Setting CurentPot
+jal wait
+jal UseLArRE
+PlantSeed:
+ls r0 LArRE 0 SortingClass
+sleep 1
+breq r0 SeedClass 3
+s LArRE Setting SeedDepot
+jal wait
+jal UseLArRE
+s LArRE Setting CurentPot
+jal wait
+jal UseLArRE
+j next
+#Repetitive functions
+wait:
+l moving LArRE PositionX
+bne moving -1 ra
+j wait
+UseLArRE:
+s LArRE Activate 1
+sleep 3
+j ra
